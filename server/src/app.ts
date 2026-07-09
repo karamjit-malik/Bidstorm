@@ -1,8 +1,10 @@
 import express, { type Application, type Request, type Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { notFoundHandler, errorHandler } from './middleware/errorMiddleware';
+import authRoutes from './routes/authRoutes';
 
 export function createApp(): Application {
   const app = express();
@@ -16,6 +18,7 @@ export function createApp(): Application {
   );
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  app.use(cookieParser());
 
   // Baseline rate limit; per-route limits (e.g. bidding) are added in later phases.
   app.use(
@@ -32,7 +35,9 @@ export function createApp(): Application {
     res.json({ success: true, data: { status: 'ok', service: 'bidstorm-server' } });
   });
 
-  // Feature routers (auth, auctions, bids, ...) are mounted here in later phases.
+  // Feature routers
+  app.use('/api/auth', authRoutes);
+  // (auctions, bids, ... mounted here in later phases)
 
   app.use(notFoundHandler);
   app.use(errorHandler);
