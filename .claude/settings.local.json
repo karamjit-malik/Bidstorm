@@ -1,0 +1,14 @@
+{
+    "model": "opus",
+    "availableModels": ["Sonnet","opus","haiku"],
+    "permissions": {
+        "ask" :[
+            "Bash"
+        ],
+        "deny" :[],
+        "allow" :[
+            "WebSearch",
+            "Grep"
+        ]
+    }
+}

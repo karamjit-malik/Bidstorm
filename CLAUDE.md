@@ -875,3 +875,11 @@ VITE_SOCKET_URL=http://localhost:5000
 ## Current Phase
 
 Phase 1 — Project scaffolding and database schema
+
+---
+
+## Working Agreements
+
+- After building or scaffolding any web app or game, always output the exact command to run it and the local URL to open (e.g., 'Run `npm run dev`, then open http://localhost:5173').
+- When verifying game or UI fixes, use Playwright A/B tests to confirm the behavior before reporting done.
+- Preferred stack for new projects: React + Vite + Tailwind (frontend), Node.js (backend); use Three.js for 3D games.
