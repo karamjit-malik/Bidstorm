@@ -3,6 +3,7 @@ import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
 import * as biddingService from '../services/biddingService';
 import * as notificationService from '../services/notificationService';
+import * as fraudDetectionService from '../services/fraudDetectionService';
 import * as bidModel from '../models/bidModel';
 import {
   broadcastNewBid,
@@ -52,6 +53,11 @@ export const placeBid = catchAsync(async (req: Request, res: Response) => {
     );
   }
 
+  // Fraud/shill analysis — fire-and-forget so it never delays or fails the bid.
+  void fraudDetectionService
+    .analyzeBid(auctionId, req.user!.id, result.bid.amount, req.ip ?? null)
+    .catch(() => undefined);
+
   res.status(201).json({
     success: true,
     data: {
@@ -85,6 +91,11 @@ export const retractBid = catchAsync(async (req: Request, res: Response) => {
     bidId: result.bidId,
     newCurrentBid: result.newCurrentBid,
   });
+
+  // Re-run analysis so repeated retractions get flagged.
+  void fraudDetectionService
+    .analyzeBid(result.auctionId, req.user!.id, result.newCurrentBid, req.ip ?? null)
+    .catch(() => undefined);
 
   res.json({ success: true, data: result });
 });

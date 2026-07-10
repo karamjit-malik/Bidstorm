@@ -2,7 +2,15 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/layout/Navbar';
 import StateBadge from '../components/auction/StateBadge';
+import StatCard from '../components/dashboard/StatCard';
+import {
+  RevenueLineChart,
+  BidsByHourChart,
+  CategoryBarChart,
+} from '../components/dashboard/AnalyticsCharts';
 import * as auctionService from '../services/auctionService';
+import * as analyticsService from '../services/analyticsService';
+import type { SellerAnalytics } from '../services/analyticsService';
 import type { AuctionState, AuctionSummary } from '../types/auction';
 import { formatCurrency } from '../utils/formatCurrency';
 import { resolveImageUrl } from '../utils/media';
@@ -20,6 +28,7 @@ const GROUP_ORDER: AuctionState[] = [
 
 export default function SellerDashboard() {
   const [auctions, setAuctions] = useState<AuctionSummary[]>([]);
+  const [analytics, setAnalytics] = useState<SellerAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,6 +39,10 @@ export default function SellerDashboard() {
       .then(setAuctions)
       .catch(() => setError('Failed to load your auctions'))
       .finally(() => setLoading(false));
+    analyticsService
+      .getSellerAnalytics()
+      .then(setAnalytics)
+      .catch(() => undefined);
   };
 
   useEffect(load, []);
@@ -52,9 +65,9 @@ export default function SellerDashboard() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <Navbar />
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-6 py-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">My auctions</h1>
+          <h1 className="text-2xl font-bold">Seller dashboard</h1>
           <Link
             to="/auctions/new"
             className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
@@ -62,6 +75,28 @@ export default function SellerDashboard() {
             + New auction
           </Link>
         </div>
+
+        {/* Analytics */}
+        {analytics && (
+          <section className="mt-6">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+              <StatCard label="Auctions" value={analytics.summary.totalAuctions} />
+              <StatCard label="Active" value={analytics.summary.activeAuctions} />
+              <StatCard label="Sold" value={analytics.summary.soldAuctions} />
+              <StatCard label="Revenue" value={formatCurrency(analytics.summary.totalRevenue)} />
+              <StatCard label="Total bids" value={analytics.summary.totalBids} />
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <RevenueLineChart data={analytics.revenueByDay} />
+              <BidsByHourChart data={analytics.bidsByHour} />
+              <div className="lg:col-span-2">
+                <CategoryBarChart data={analytics.categoryBreakdown} />
+              </div>
+            </div>
+          </section>
+        )}
+
+        <h2 className="mt-10 text-lg font-semibold">My auctions</h2>
 
         {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
 

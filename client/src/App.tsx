@@ -8,8 +8,10 @@ import AuctionList from './pages/AuctionList';
 import AuctionDetail from './pages/AuctionDetail';
 import CreateAuction from './pages/CreateAuction';
 import SellerDashboard from './pages/SellerDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import ToastContainer from './components/ui/ToastContainer';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useAuth } from './hooks/useAuth';
 import { useSocket } from './hooks/useSocket';
 
@@ -20,6 +22,7 @@ export default function App() {
   useSocket();
 
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <ToastContainer />
       <Routes>
@@ -37,10 +40,13 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/auctions/new" element={<CreateAuction />} />
           <Route path="/dashboard" element={<SellerDashboard />} />
+          {/* AdminDashboard self-gates to admin role. */}
+          <Route path="/admin" element={<AdminDashboard />} />
         </Route>
 
         <Route path="*" element={<Home />} />
       </Routes>
     </BrowserRouter>
+    </ErrorBoundary>
   );
 }

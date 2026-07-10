@@ -25,6 +25,11 @@ export default function Navbar() {
                 My auctions
               </Link>
             )}
+            {user?.role === 'admin' && (
+              <Link to="/admin" className="text-slate-600 hover:text-brand-600 dark:text-slate-300">
+                Admin
+              </Link>
+            )}
           </nav>
         </div>
 

@@ -123,6 +123,33 @@ async function settleWithWinner(
 }
 
 /**
+ * Admin suspends an auction. SCHEDULED/DRAFT -> DRAFT (pulled from schedule);
+ * LIVE/EXTENDING -> ENDED (bidding stopped, winner cleared). Terminal auctions
+ * can't be suspended. Returns the new state.
+ */
+export async function suspendAuction(
+  auctionId: number,
+  adminId: number,
+): Promise<'DRAFT' | 'ENDED'> {
+  const { AppError } = await import('../utils/AppError');
+  const row = await auctionModel.findById(auctionId);
+  if (!row) throw new AppError('Auction not found', 404);
+
+  let toState: 'DRAFT' | 'ENDED';
+  if (row.state === 'SCHEDULED' || row.state === 'DRAFT') toState = 'DRAFT';
+  else if (row.state === 'LIVE' || row.state === 'EXTENDING') toState = 'ENDED';
+  else throw new AppError(`Cannot suspend an auction in ${row.state} state`, 400);
+
+  await auctionModel.suspend(auctionId, row.state, toState);
+  await auctionModel.logStateChange(auctionId, row.state, toState, 'admin', {
+    reason: 'admin_suspended',
+    adminId,
+  });
+  await safeBroadcast((m) => m.broadcastStateChange(auctionId, toState));
+  return toState;
+}
+
+/**
  * SETTLING -> ENDED for auctions whose buyer never paid within the timeout.
  * Marks the escrow refunded and notifies the seller. (Re-offering to the next
  * bidder is a future enhancement.) Returns the count of auctions timed out.

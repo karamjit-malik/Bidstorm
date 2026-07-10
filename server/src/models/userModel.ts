@@ -12,6 +12,8 @@ export interface UserRow extends RowDataPacket {
   avatar_url: string | null;
   role: UserRole;
   is_verified: number; // MySQL BOOLEAN -> 0/1
+  is_suspended: number;
+  suspended_reason: string | null;
   verification_token: string | null;
   reputation_score: number;
   created_at: Date;
@@ -101,6 +103,19 @@ export async function markVerified(userId: number): Promise<void> {
     'UPDATE users SET is_verified = TRUE, verification_token = NULL WHERE id = ?',
     [userId],
   );
+}
+
+/** Admin action: suspend or reinstate a user. */
+export async function setSuspended(
+  userId: number,
+  suspended: boolean,
+  reason: string | null = null,
+): Promise<void> {
+  await pool.query('UPDATE users SET is_suspended = ?, suspended_reason = ? WHERE id = ?', [
+    suspended,
+    suspended ? reason : null,
+    userId,
+  ]);
 }
 
 export interface UpdateProfileInput {

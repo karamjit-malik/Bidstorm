@@ -305,6 +305,19 @@ export async function transition(
   return result.affectedRows > 0;
 }
 
+/** Admin suspend: force a state change and clear any winner (guarded). */
+export async function suspend(
+  id: number,
+  fromState: AuctionState,
+  toState: AuctionState,
+): Promise<boolean> {
+  const [result] = await pool.query<ResultSetHeader>(
+    'UPDATE auctions SET state = ?, winner_id = NULL WHERE id = ? AND state = ?',
+    [toState, id, fromState],
+  );
+  return result.affectedRows > 0;
+}
+
 /** Records an auction state transition in the audit log. */
 export async function logStateChange(
   auctionId: number,

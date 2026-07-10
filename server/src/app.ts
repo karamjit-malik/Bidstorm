@@ -12,6 +12,8 @@ import categoryRoutes from './routes/categoryRoutes';
 import bidRoutes from './routes/bidRoutes';
 import recommendationRoutes from './routes/recommendationRoutes';
 import watchlistRoutes from './routes/watchlistRoutes';
+import analyticsRoutes from './routes/analyticsRoutes';
+import adminRoutes from './routes/adminRoutes';
 
 export function createApp(): Application {
   const app = express();
@@ -60,7 +62,9 @@ export function createApp(): Application {
   app.use('/api/bids', bidRoutes);
   app.use('/api/recommendations', recommendationRoutes);
   app.use('/api/watchlist', watchlistRoutes);
-  // (reviews, admin, ... mounted here in later phases)
+  app.use('/api/analytics', analyticsRoutes);
+  app.use('/api/admin', adminRoutes);
+  // (reviews ... mounted here in a later phase)
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -874,7 +874,8 @@ VITE_SOCKET_URL=http://localhost:5000
 
 ## Current Phase
 
-Phase 7 — Fraud Detection + Analytics + Polish (Phases 1–6 complete)
+Complete — all 7 build phases shipped (scaffolding, auth, auctions+images,
+real-time bidding, lifecycle jobs, recommendations, fraud/analytics/polish).
 
 ---
 

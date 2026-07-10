@@ -95,6 +95,9 @@ export async function login(
   if (!user.is_verified) {
     throw new AppError('Please verify your email before logging in', 403);
   }
+  if (user.is_suspended) {
+    throw new AppError('Your account has been suspended. Contact support.', 403);
+  }
 
   const tokens = await issueTokens({ id: user.id, email: user.email, role: user.role });
   return { user: userModel.toPublicUser(user), tokens };
@@ -118,6 +121,9 @@ export async function rotateRefreshToken(
 
   const user = await userModel.findById(stored.user_id);
   if (!user) throw new AppError('Invalid or expired session', 401);
+  if (user.is_suspended) {
+    throw new AppError('Your account has been suspended. Contact support.', 403);
+  }
 
   const tokens = await issueTokens({ id: user.id, email: user.email, role: user.role });
   return { user: userModel.toPublicUser(user), tokens };
