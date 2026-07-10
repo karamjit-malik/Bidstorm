@@ -6,6 +6,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['"Inter Variable"', 'Inter', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        display: ['"Space Grotesk Variable"', '"Inter Variable"', 'system-ui', 'sans-serif'],
       },
       colors: {
         // BidStorm brand — indigo→violet auction identity. Full ramp so borders,
@@ -72,6 +73,14 @@ export default {
           '70%': { boxShadow: '0 0 0 8px rgba(168,85,247,0)' },
           '100%': { boxShadow: '0 0 0 0 rgba(168,85,247,0)' },
         },
+        marquee: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        'scroll-cue': {
+          '0%,100%': { transform: 'translateY(0)', opacity: '0.4' },
+          '50%': { transform: 'translateY(6px)', opacity: '1' },
+        },
       },
       animation: {
         'fade-up': 'fade-up 0.6s cubic-bezier(0.22,1,0.36,1) both',
@@ -80,6 +89,8 @@ export default {
         shimmer: 'shimmer 2.5s linear infinite',
         'gradient-pan': 'gradient-pan 8s ease infinite',
         'pulse-ring': 'pulse-ring 2s cubic-bezier(0.4,0,0.6,1) infinite',
+        marquee: 'marquee 30s linear infinite',
+        'scroll-cue': 'scroll-cue 1.8s ease-in-out infinite',
       },
     },
   },
