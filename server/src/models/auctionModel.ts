@@ -189,6 +189,36 @@ export async function setState(
   await conn.query('UPDATE auctions SET state = ? WHERE id = ?', [state, id]);
 }
 
+/**
+ * Atomically finalizes a live auction whose time is up: LIVE/EXTENDING -> ENDED,
+ * setting the winner. The WHERE guard (state + end_time in the past) makes this
+ * idempotent and race-safe — only the first caller flips it; returns whether
+ * this call performed the transition.
+ */
+export async function finalizeEnded(id: number, winnerId: number | null): Promise<boolean> {
+  const [result] = await pool.query<ResultSetHeader>(
+    `UPDATE auctions SET state = 'ENDED', winner_id = ?
+     WHERE id = ? AND state IN ('LIVE', 'EXTENDING') AND end_time <= UTC_TIMESTAMP()`,
+    [winnerId, id],
+  );
+  return result.affectedRows > 0;
+}
+
+/** Records an auction state transition in the audit log. */
+export async function logStateChange(
+  auctionId: number,
+  fromState: AuctionState,
+  toState: AuctionState,
+  triggeredBy: 'system' | 'seller' | 'admin' | 'anti_snipe',
+  metadata: Record<string, unknown> = {},
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO auction_state_log (auction_id, from_state, to_state, triggered_by, metadata)
+     VALUES (?, ?, ?, ?, ?)`,
+    [auctionId, fromState, toState, triggeredBy, JSON.stringify(metadata)],
+  );
+}
+
 export interface ListFilters {
   categoryId?: number;
   priceMin?: number;

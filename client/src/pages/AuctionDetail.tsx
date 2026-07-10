@@ -127,14 +127,19 @@ export default function AuctionDetail() {
     return live.currentBid > 0 ? live.currentBid + auction.minBidIncrement : auction.startingPrice;
   }, [auction, live]);
 
+  const endTime = live?.endTime ?? auction?.endTime ?? null;
+
+  // Time is up the moment the (server-corrected) clock passes the end time,
+  // even if a state-change event hasn't arrived yet.
+  const timeUp = endTime != null && Date.parse(endTime) <= Date.now() + room.serverOffsetMs;
+
   const canBid =
     isAuthenticated &&
     auction != null &&
     live != null &&
     (live.state === 'LIVE' || live.state === 'EXTENDING') &&
+    !timeUp &&
     user?.id !== auction.sellerId;
-
-  const endTime = live?.endTime ?? auction?.endTime ?? null;
 
   const submitBid = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -292,7 +297,9 @@ export default function AuctionDetail() {
                       ? 'Log in to place a bid.'
                       : user?.id === auction.sellerId
                         ? 'You cannot bid on your own auction.'
-                        : 'This auction is not accepting bids.'}
+                        : timeUp || live.state === 'ENDED' || live.state === 'COMPLETED'
+                          ? 'This auction has ended.'
+                          : 'This auction is not accepting bids.'}
                   </p>
                 )}
               </div>

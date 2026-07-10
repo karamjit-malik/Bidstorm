@@ -3,10 +3,50 @@ import { config } from '../config';
 import * as auctionModel from '../models/auctionModel';
 import * as categoryModel from '../models/categoryModel';
 import * as imageModel from '../models/auctionImageModel';
+import * as bidModel from '../models/bidModel';
 import { processAuctionImage, removeImageFiles } from './imageService';
 import type { AuctionState, AuthUser } from '../types';
 import type { AuctionRow, PublicAuctionSummary } from '../models/auctionModel';
 import type { PublicAuctionImage } from '../models/auctionImageModel';
+
+/**
+ * Self-healing lifecycle guard: if a LIVE/EXTENDING auction is past its end
+ * time, settle it to ENDED (determining the winner) on read. This keeps state,
+ * badge, countdown, and the bid box consistent until the Phase 5 scheduler ends
+ * auctions proactively. Returns the effective (possibly refreshed) row.
+ */
+async function settleIfExpired(row: AuctionRow, broadcast: boolean): Promise<AuctionRow> {
+  const active = row.state === 'LIVE' || row.state === 'EXTENDING';
+  if (!active || new Date(row.end_time).getTime() > Date.now()) return row;
+
+  // Winner = highest active bid that meets the reserve (if any).
+  const highest = await bidModel.findHighestActiveBid(row.id);
+  const reserve = row.reserve_price === null ? null : Number(row.reserve_price);
+  const winningBid = highest ? Number(highest.amount) : 0;
+  const meetsReserve = highest !== null && (reserve === null || winningBid >= reserve);
+  const winnerId = meetsReserve ? highest!.bidder_id : null;
+
+  const didFinalize = await auctionModel.finalizeEnded(row.id, winnerId);
+  if (didFinalize) {
+    await auctionModel.logStateChange(row.id, row.state, 'ENDED', 'system', {
+      reason: 'end_time_reached',
+      winnerId,
+      winningBid,
+    });
+    if (broadcast) {
+      try {
+        // Lazy import avoids a socket dependency when the layer isn't running.
+        const { broadcastAuctionEnded } = await import('../socket/auctionRoom');
+        broadcastAuctionEnded(row.id, { winnerId, winningBid });
+      } catch {
+        /* socket not initialized (e.g. in tests) — ignore */
+      }
+    }
+  }
+
+  const fresh = await auctionModel.findById(row.id);
+  return fresh ?? row;
+}
 
 export interface CreateAuctionInput {
   categoryId: number;
@@ -91,8 +131,9 @@ export async function createAuction(
 }
 
 export async function getAuctionDetail(id: number): Promise<PublicAuctionDetail> {
-  const row = await auctionModel.findById(id);
+  let row = await auctionModel.findById(id);
   if (!row) throw new AppError('Auction not found', 404);
+  row = await settleIfExpired(row, true);
   const images = (await imageModel.findByAuction(id)).map(imageModel.toPublicImage);
   return detailFrom(row, images);
 }
@@ -128,8 +169,12 @@ export async function listAuctions(query: ListQuery): Promise<ListResponse> {
     limit,
   });
 
-  const thumbs = await thumbnailMap(rows.map((r) => r.id));
-  const items = rows.map((r) => auctionModel.toSummary(r, thumbs.get(r.id) ?? null));
+  // Settle any expired auctions on this page so badges reflect reality (bounded
+  // by page size; no broadcast on list reads).
+  const settled = await Promise.all(rows.map((r) => settleIfExpired(r, false)));
+
+  const thumbs = await thumbnailMap(settled.map((r) => r.id));
+  const items = settled.map((r) => auctionModel.toSummary(r, thumbs.get(r.id) ?? null));
   return { items, nextCursor };
 }
 
