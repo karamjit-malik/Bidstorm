@@ -12,6 +12,12 @@ export default defineConfig({
         target: process.env.VITE_API_PROXY ?? 'http://localhost:5000',
         changeOrigin: true,
       },
+      // Uploaded auction images are served by the backend at /uploads; proxy
+      // them too so relative image URLs resolve during dev (no VITE env needed).
+      '/uploads': {
+        target: process.env.VITE_API_PROXY ?? 'http://localhost:5000',
+        changeOrigin: true,
+      },
     },
   },
 });
