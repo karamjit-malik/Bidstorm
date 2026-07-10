@@ -190,16 +190,69 @@ export async function setState(
 }
 
 /**
- * Atomically finalizes a live auction whose time is up: LIVE/EXTENDING -> ENDED,
- * setting the winner. The WHERE guard (state + end_time in the past) makes this
+ * Atomically ends a live auction whose time is up: LIVE/EXTENDING -> toState
+ * (SETTLING when there's a winner to collect payment from, else ENDED), setting
+ * the winner. The WHERE guard (state + end_time in the past) makes this
  * idempotent and race-safe — only the first caller flips it; returns whether
  * this call performed the transition.
  */
-export async function finalizeEnded(id: number, winnerId: number | null): Promise<boolean> {
+export async function endExpired(
+  id: number,
+  toState: 'ENDED' | 'SETTLING',
+  winnerId: number | null,
+): Promise<boolean> {
   const [result] = await pool.query<ResultSetHeader>(
-    `UPDATE auctions SET state = 'ENDED', winner_id = ?
+    `UPDATE auctions SET state = ?, winner_id = ?
      WHERE id = ? AND state IN ('LIVE', 'EXTENDING') AND end_time <= UTC_TIMESTAMP()`,
-    [winnerId, id],
+    [toState, winnerId, id],
+  );
+  return result.affectedRows > 0;
+}
+
+/**
+ * Atomically starts a scheduled auction whose start time has arrived:
+ * SCHEDULED -> LIVE. Idempotent and race-safe via the guarded WHERE.
+ */
+export async function startLive(id: number): Promise<boolean> {
+  const [result] = await pool.query<ResultSetHeader>(
+    `UPDATE auctions SET state = 'LIVE'
+     WHERE id = ? AND state = 'SCHEDULED' AND start_time <= UTC_TIMESTAMP()`,
+    [id],
+  );
+  return result.affectedRows > 0;
+}
+
+/** IDs of auctions whose start time has arrived while still SCHEDULED. */
+export async function findDueToStartIds(limit = 200): Promise<number[]> {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT id FROM auctions
+     WHERE state = 'SCHEDULED' AND start_time <= UTC_TIMESTAMP()
+     ORDER BY start_time ASC LIMIT ?`,
+    [limit],
+  );
+  return rows.map((r) => r.id as number);
+}
+
+/** IDs of live auctions whose end time has passed and need settling. */
+export async function findDueToEndIds(limit = 200): Promise<number[]> {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT id FROM auctions
+     WHERE state IN ('LIVE', 'EXTENDING') AND end_time <= UTC_TIMESTAMP()
+     ORDER BY end_time ASC LIMIT ?`,
+    [limit],
+  );
+  return rows.map((r) => r.id as number);
+}
+
+/** Transitions an auction between arbitrary states with a from-state guard. */
+export async function transition(
+  id: number,
+  fromState: AuctionState,
+  toState: AuctionState,
+): Promise<boolean> {
+  const [result] = await pool.query<ResultSetHeader>(
+    'UPDATE auctions SET state = ? WHERE id = ? AND state = ?',
+    [toState, id, fromState],
   );
   return result.affectedRows > 0;
 }

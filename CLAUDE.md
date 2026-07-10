@@ -874,7 +874,7 @@ VITE_SOCKET_URL=http://localhost:5000
 
 ## Current Phase
 
-Phase 5 — Scheduled Jobs + Lifecycle (Phases 1–4 complete)
+Phase 6 — Recommendation Engine (Phases 1–5 complete)
 
 ---
 

@@ -141,6 +141,10 @@ export default function AuctionDetail() {
     !timeUp &&
     user?.id !== auction.sellerId;
 
+  const isTerminal =
+    live != null && (live.state === 'ENDED' || live.state === 'SETTLING' || live.state === 'COMPLETED');
+  const youWon = isTerminal && auction != null && user != null && auction.winnerId === user.id;
+
   const submitBid = async (e: React.FormEvent) => {
     e.preventDefault();
     setBidError(null);
@@ -238,6 +242,28 @@ export default function AuctionDetail() {
               <p className="mt-2 text-sm text-slate-500">
                 Sold by @{auction.seller.username} · reputation {auction.seller.reputationScore.toFixed(2)}
               </p>
+
+              {isTerminal && (
+                <div
+                  className={`mt-4 rounded-lg border px-4 py-3 text-sm ${
+                    youWon
+                      ? 'border-green-300 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200'
+                      : 'border-slate-300 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+                  }`}
+                >
+                  {youWon ? (
+                    <>
+                      🎉 <span className="font-semibold">You won this auction</span> at{' '}
+                      {formatCurrency(live.currentBid)}.{' '}
+                      {live.state === 'SETTLING' ? 'Complete payment to finish.' : ''}
+                    </>
+                  ) : auction.winnerId != null ? (
+                    <>Sold for {formatCurrency(live.currentBid)} to the winning bidder.</>
+                  ) : (
+                    <>This auction ended with no winner (reserve not met or no bids).</>
+                  )}
+                </div>
+              )}
 
               <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-end justify-between">
