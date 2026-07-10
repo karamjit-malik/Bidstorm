@@ -18,6 +18,17 @@ export const pool = mysql.createPool({
   charset: 'utf8mb4_unicode_ci',
 });
 
+/**
+ * Pin every pooled connection's session time zone to UTC. The driver reads
+ * DATE/TIME values as UTC (`timezone: 'Z'`), so the DB session must also be UTC
+ * — otherwise TIMESTAMP columns (e.g. bids.created_at, filled by
+ * CURRENT_TIMESTAMP) come back shifted by the server's local offset and appear
+ * in the future. DATETIME columns aren't affected, which is why end_time was fine.
+ */
+pool.on('connection', (conn) => {
+  conn.query("SET time_zone = '+00:00'");
+});
+
 /** Verifies the pool can reach the database. Called on server startup. */
 export async function assertDbConnection(): Promise<void> {
   const conn = await pool.getConnection();
