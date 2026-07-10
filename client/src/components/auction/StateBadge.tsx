@@ -1,21 +1,22 @@
 import type { AuctionState } from '../../types/auction';
 
-const STYLES: Record<AuctionState, string> = {
-  DRAFT: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
-  SCHEDULED: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
-  LIVE: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300',
-  EXTENDING: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300',
-  ENDED: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  SETTLING: 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
-  COMPLETED: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
+// A small dot colour per state; the pill itself stays monochrome/editorial.
+const DOT: Record<AuctionState, string> = {
+  DRAFT: 'bg-black/30',
+  SCHEDULED: 'bg-blue-500',
+  LIVE: 'bg-green-500',
+  EXTENDING: 'bg-amber-500',
+  ENDED: 'bg-black/30',
+  SETTLING: 'bg-purple-500',
+  COMPLETED: 'bg-green-600',
 };
 
 export default function StateBadge({ state }: { state: AuctionState }) {
   return (
-    <span
-      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STYLES[state]}`}
-    >
-      {state === 'LIVE' && <span className="mr-1 animate-pulse">●</span>}
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-black/15 bg-white/80 px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-black backdrop-blur">
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${DOT[state]} ${state === 'LIVE' ? 'animate-pulse' : ''}`}
+      />
       {state}
     </span>
   );

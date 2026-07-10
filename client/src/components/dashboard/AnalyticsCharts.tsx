@@ -15,10 +15,10 @@ import { formatCurrency } from '../../utils/formatCurrency';
 // Single-hue magnitude marks (brand indigo) — readable on light and dark
 // surfaces. Grid/axis stay recessive; these charts are all single-series so no
 // legend is needed (the card title names the measure).
-const MARK = '#6366f1';
-const MARK_SOFT = '#a5b4fc';
-const AXIS = '#94a3b8';
-const GRID = 'rgba(148,163,184,0.25)';
+const MARK = '#1a1815';
+const MARK_SOFT = '#b6b1a8';
+const AXIS = '#78726a';
+const GRID = 'rgba(0,0,0,0.1)';
 
 const axisTick = { fill: AXIS, fontSize: 12 };
 

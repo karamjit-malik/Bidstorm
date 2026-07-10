@@ -174,9 +174,9 @@ export default function AuctionDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen bg-[#efedea] text-black">
       <Navbar />
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="mx-auto max-w-5xl px-5 py-10 sm:px-8">
         {loading ? (
           <p className="text-slate-500">Loading…</p>
         ) : error || !auction || !live ? (
@@ -302,7 +302,7 @@ export default function AuctionDetail() {
                       <button
                         type="submit"
                         disabled={submitting}
-                        className="shrink-0 rounded-lg bg-brand-600 px-5 py-2 font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+                        className="shrink-0 rounded-full border border-black bg-black px-6 py-2 font-medium text-white transition-colors hover:bg-transparent hover:text-black disabled:opacity-60"
                       >
                         {submitting ? 'Bidding…' : 'Place bid'}
                       </button>

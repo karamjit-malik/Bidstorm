@@ -63,14 +63,14 @@ export default function SellerDashboard() {
   })).filter((g) => g.items.length > 0);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen bg-[#efedea] text-black">
       <Navbar />
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Seller dashboard</h1>
+          <h1 className="font-display text-3xl tracking-tight sm:text-4xl">Seller dashboard</h1>
           <Link
             to="/auctions/new"
-            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
+            className="rounded-full border border-black bg-black px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-transparent hover:text-black"
           >
             + New auction
           </Link>

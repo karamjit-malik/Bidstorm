@@ -1,73 +1,67 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
-/** Shared top navigation used across the app's content pages. */
+/** Shared top navigation — Mainframe editorial style. */
 export default function Navbar() {
   const { user, isAuthenticated, status, logout } = useAuth();
   const canSell = user?.role === 'seller' || user?.role === 'admin';
 
-  const linkCls =
-    'text-sm font-medium text-slate-600 transition-colors hover:text-brand-600 dark:text-slate-300 dark:hover:text-brand-300';
+  const link = 'text-[15px] text-black transition-opacity hover:opacity-60';
+  const pill =
+    'inline-flex items-center rounded-full border border-black bg-black px-4 py-1.5 text-[14px] text-white transition-colors hover:bg-white hover:text-black';
+  const pillOutline =
+    'inline-flex items-center rounded-full border border-black/25 px-4 py-1.5 text-[14px] text-black transition-colors hover:border-black hover:bg-black hover:text-white';
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/70 bg-white/70 backdrop-blur-xl dark:border-white/5 dark:bg-ink-950/70">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-        <div className="flex items-center gap-7">
-          <Link to="/" className="group flex items-center gap-1.5 text-xl font-extrabold tracking-tight">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-brand-gradient text-sm text-white shadow-glow transition-transform group-hover:scale-110">
-              ⚡
+    <header className="sticky top-0 z-40 border-b border-black/10 bg-[#efedea]/85 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
+        <div className="flex items-center gap-6">
+          <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-70">
+            <span className="font-display text-[22px] tracking-tight text-black">BidStorm</span>
+            <span className="select-none text-[24px] text-black" style={{ letterSpacing: '-0.02em' }}>
+              ✳︎
             </span>
-            <span className="gradient-text">BidStorm</span>
           </Link>
-          <nav className="hidden gap-5 sm:flex">
-            <Link to="/auctions" className={linkCls}>
+          <nav className="hidden items-center gap-5 md:flex">
+            <Link to="/auctions" className={link}>
               Browse
             </Link>
             {canSell && (
-              <Link to="/dashboard" className={linkCls}>
+              <Link to="/dashboard" className={link}>
                 My auctions
               </Link>
             )}
             {user?.role === 'admin' && (
-              <Link to="/admin" className={linkCls}>
+              <Link to="/admin" className={link}>
                 Admin
               </Link>
             )}
           </nav>
         </div>
 
-        <nav className="flex items-center gap-3 text-sm">
+        <nav className="flex items-center gap-4">
           {status === 'loading' ? (
-            <span className="text-slate-400">…</span>
+            <span className="text-black/40">…</span>
           ) : isAuthenticated && user ? (
             <>
               {canSell && (
-                <Link
-                  to="/auctions/new"
-                  className="rounded-lg bg-brand-gradient bg-[length:200%_auto] px-3.5 py-1.5 font-medium text-white shadow-glow transition-all hover:bg-[position:100%_0]"
-                >
+                <Link to="/auctions/new" className={pill}>
                   + New auction
                 </Link>
               )}
-              <Link to="/profile" className={linkCls}>
+              <Link to="/profile" className={`${link} hidden sm:inline`}>
                 {user.username}
               </Link>
-              <button
-                onClick={() => void logout()}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium transition hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
-              >
+              <button onClick={() => void logout()} className={pillOutline}>
                 Log out
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className={linkCls}>
+              <Link to="/login" className={`${link} underline underline-offset-2`}>
                 Log in
               </Link>
-              <Link
-                to="/register"
-                className="rounded-lg bg-brand-gradient bg-[length:200%_auto] px-3.5 py-1.5 font-medium text-white shadow-glow transition-all hover:bg-[position:100%_0]"
-              >
+              <Link to="/register" className={pill}>
                 Sign up
               </Link>
             </>

@@ -65,9 +65,9 @@ export default function Login() {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-500">
+      <p className="mt-6 text-center text-sm text-black/50">
         No account?{' '}
-        <Link to="/register" className="font-medium text-brand-600 hover:underline">
+        <Link to="/register" className="font-medium text-black underline underline-offset-2 hover:opacity-60">
           Create one
         </Link>
       </p>
@@ -78,10 +78,10 @@ export default function Login() {
 // --- Small shared UI primitives (promoted to components/ui in a later phase). ---
 
 export const inputCls =
-  'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100';
+  'w-full rounded-lg border border-black/15 bg-white px-3 py-2 text-black outline-none transition focus:border-black focus:ring-2 focus:ring-black/10';
 
 export const btnCls =
-  'w-full rounded-lg bg-brand-600 px-4 py-2 font-medium text-white transition hover:bg-brand-700 disabled:opacity-60';
+  'w-full rounded-full border border-black bg-black px-4 py-2.5 font-medium text-white transition-colors hover:bg-transparent hover:text-black disabled:opacity-60';
 
 export function Field({
   label,
@@ -94,9 +94,7 @@ export function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
-        {label}
-      </span>
+      <span className="mb-1 block text-sm font-medium text-black/70">{label}</span>
       {children}
       {error && <span className="mt-1 block text-sm text-red-500">{error}</span>}
     </label>
@@ -106,8 +104,8 @@ export function Field({
 export function Banner({ tone, children }: { tone: 'success' | 'error'; children: React.ReactNode }) {
   const cls =
     tone === 'success'
-      ? 'border-green-300 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-300'
-      : 'border-red-300 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300';
+      ? 'border-green-600/30 bg-green-50 text-green-800'
+      : 'border-red-600/30 bg-red-50 text-red-700';
   return <div className={`mb-4 rounded-lg border px-4 py-2 text-sm ${cls}`}>{children}</div>;
 }
 
@@ -121,14 +119,17 @@ export function AuthShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid min-h-screen place-items-center bg-slate-50 px-4 dark:bg-slate-950">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="grid min-h-screen place-items-center bg-[#efedea] px-4">
+      <div className="w-full max-w-md rounded-2xl border border-black/10 bg-white p-8 shadow-card">
         <div className="mb-6">
-          <Link to="/" className="text-xl font-bold text-brand-600">
-            BidStorm ⚡
+          <Link to="/" className="flex items-center gap-1.5">
+            <span className="font-display text-xl tracking-tight text-black">BidStorm</span>
+            <span className="select-none text-[22px] text-black" style={{ letterSpacing: '-0.02em' }}>
+              ✳︎
+            </span>
           </Link>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900 dark:text-slate-100">{title}</h1>
-          <p className="text-sm text-slate-500">{subtitle}</p>
+          <h1 className="mt-5 font-display text-2xl tracking-tight text-black">{title}</h1>
+          <p className="mt-1 text-sm text-black/50">{subtitle}</p>
         </div>
         {children}
       </div>

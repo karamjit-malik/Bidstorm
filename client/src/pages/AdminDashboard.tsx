@@ -83,10 +83,10 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen bg-[#efedea] text-black">
       <Navbar />
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        <h1 className="text-2xl font-bold">Admin dashboard</h1>
+      <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
+        <h1 className="font-display text-3xl tracking-tight sm:text-4xl">Admin dashboard</h1>
 
         {loading ? (
           <p className="mt-8 text-slate-500">Loading…</p>

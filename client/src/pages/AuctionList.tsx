@@ -92,10 +92,10 @@ export default function AuctionList() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen bg-[#efedea] text-black">
       <Navbar />
-      <main className="mx-auto max-w-6xl px-6 py-8">
-        <h1 className="text-2xl font-bold">Browse auctions</h1>
+      <main className="mx-auto max-w-6xl px-5 py-10 sm:px-8">
+        <h1 className="font-display text-3xl tracking-tight sm:text-4xl">Browse auctions</h1>
 
         {/* Filter bar */}
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -150,7 +150,7 @@ export default function AuctionList() {
 
         <div className="mt-8">
           {items.length === 0 && !loading ? (
-            <div className="rounded-xl border border-dashed border-slate-300 py-16 text-center text-slate-500 dark:border-slate-700">
+            <div className="rounded-2xl border border-dashed border-black/15 py-16 text-center text-black/50">
               No auctions match your filters yet.
             </div>
           ) : (
@@ -164,7 +164,7 @@ export default function AuctionList() {
           <div className="mt-8 text-center">
             <button
               onClick={() => void loadMore()}
-              className="rounded-lg border border-slate-300 px-6 py-2 text-sm font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+              className="rounded-full border border-black/25 px-6 py-2 text-sm font-medium text-black transition-colors hover:border-black hover:bg-black hover:text-white"
             >
               Load more
             </button>
