@@ -1,36 +1,167 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { AxiosError } from 'axios';
 import Navbar from '../components/layout/Navbar';
 import StateBadge from '../components/auction/StateBadge';
+import CountdownTimer from '../components/auction/CountdownTimer';
+import BidFeed from '../components/auction/BidFeed';
+import { useAuth } from '../hooks/useAuth';
+import { useAuctionRoom } from '../hooks/useAuctionRoom';
+import { useNotificationStore } from '../store/notificationStore';
 import * as auctionService from '../services/auctionService';
-import type { AuctionDetail as AuctionDetailT } from '../types/auction';
+import * as bidService from '../services/bidService';
+import type { AuctionDetail as AuctionDetailT, AuctionState } from '../types/auction';
+import type { Bid, NewBidEvent } from '../types/bid';
 import { formatCurrency } from '../utils/formatCurrency';
 import { resolveImageUrl } from '../utils/media';
 
+interface LiveState {
+  currentBid: number;
+  bidCount: number;
+  state: AuctionState;
+  endTime: string;
+}
+
 export default function AuctionDetail() {
   const { id } = useParams<{ id: string }>();
-  const [auction, setAuction] = useState<AuctionDetailT | null>(null);
-  const [activeImage, setActiveImage] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const auctionId = Number(id);
+  const { user, isAuthenticated } = useAuth();
+  const push = useNotificationStore((s) => s.push);
 
+  const [auction, setAuction] = useState<AuctionDetailT | null>(null);
+  const [live, setLive] = useState<LiveState | null>(null);
+  const [bids, setBids] = useState<Bid[]>([]);
+  const [activeImage, setActiveImage] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [bidAmount, setBidAmount] = useState('');
+  const [bidError, setBidError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // --- Load auction + bid history ---
   useEffect(() => {
-    const auctionId = Number(id);
     if (!Number.isFinite(auctionId)) {
       setError('Invalid auction');
       setLoading(false);
       return;
     }
     setLoading(true);
-    auctionService
-      .getAuction(auctionId)
-      .then((a) => {
+    Promise.all([auctionService.getAuction(auctionId), bidService.getBidHistory(auctionId)])
+      .then(([a, history]) => {
         setAuction(a);
+        setLive({ currentBid: a.currentBid, bidCount: a.bidCount, state: a.state, endTime: a.endTime });
+        setBids(history);
         setActiveImage(0);
       })
       .catch(() => setError('Auction not found'))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [auctionId]);
+
+  // --- Real-time room subscription ---
+  const onNewBid = useCallback((e: NewBidEvent) => {
+    const bid: Bid = {
+      id: e.bidId,
+      auctionId,
+      bidderId: 0,
+      bidderUsername: e.bidderUsername,
+      amount: e.amount,
+      isWinning: true,
+      isRetracted: false,
+      createdAt: e.timestamp,
+    };
+    setBids((prev) => (prev.some((b) => b.id === e.bidId) ? prev : [bid, ...prev]));
+    setLive((prev) => (prev ? { ...prev, currentBid: e.amount, bidCount: e.bidCount } : prev));
+  }, [auctionId]);
+
+  const onBidRetracted = useCallback((e: { bidId: number; newCurrentBid: number }) => {
+    setBids((prev) => prev.map((b) => (b.id === e.bidId ? { ...b, isRetracted: true } : b)));
+    setLive((prev) => (prev ? { ...prev, currentBid: e.newCurrentBid } : prev));
+  }, []);
+
+  const onAntiSnipe = useCallback(
+    (e: { auctionId: number; newEndTime: string; extensionSeconds: number }) => {
+      if (e.auctionId !== auctionId) return;
+      setLive((prev) => (prev ? { ...prev, endTime: e.newEndTime, state: 'EXTENDING' } : prev));
+      push({
+        tone: 'info',
+        title: 'Auction extended',
+        message: `A late bid added ${e.extensionSeconds}s to the clock.`,
+      });
+    },
+    [auctionId, push],
+  );
+
+  const onStateChange = useCallback(
+    (e: { auctionId: number; newState: string; endTime?: string }) => {
+      if (e.auctionId !== auctionId) return;
+      setLive((prev) =>
+        prev ? { ...prev, state: e.newState as AuctionState, endTime: e.endTime ?? prev.endTime } : prev,
+      );
+    },
+    [auctionId],
+  );
+
+  const onEnded = useCallback(
+    (e: { auctionId: number; winningBid: number }) => {
+      if (e.auctionId !== auctionId) return;
+      setLive((prev) => (prev ? { ...prev, state: 'ENDED' } : prev));
+      push({ tone: 'info', title: 'Auction ended', message: `Final bid ${formatCurrency(e.winningBid)}.` });
+    },
+    [auctionId, push],
+  );
+
+  const handlers = useMemo(
+    () => ({ onNewBid, onBidRetracted, onAntiSnipe, onStateChange, onEnded }),
+    [onNewBid, onBidRetracted, onAntiSnipe, onStateChange, onEnded],
+  );
+
+  const room = useAuctionRoom(
+    Number.isFinite(auctionId) && auction ? auctionId : null,
+    handlers,
+  );
+
+  // --- Derived bid rules ---
+  const minNextBid = useMemo(() => {
+    if (!auction || !live) return 0;
+    return live.currentBid > 0 ? live.currentBid + auction.minBidIncrement : auction.startingPrice;
+  }, [auction, live]);
+
+  const canBid =
+    isAuthenticated &&
+    auction != null &&
+    live != null &&
+    (live.state === 'LIVE' || live.state === 'EXTENDING') &&
+    user?.id !== auction.sellerId;
+
+  const endTime = live?.endTime ?? auction?.endTime ?? null;
+
+  const submitBid = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBidError(null);
+    const amount = Number(bidAmount);
+    if (!Number.isFinite(amount) || amount < minNextBid) {
+      setBidError(`Enter at least ${formatCurrency(minNextBid)}`);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await bidService.placeBid(auctionId, amount);
+      setLive((prev) =>
+        prev
+          ? { ...prev, currentBid: res.auction.currentBid, bidCount: res.auction.bidCount, state: res.auction.state as AuctionState, endTime: res.auction.endTime }
+          : prev,
+      );
+      setBidAmount('');
+      push({ tone: 'success', title: 'Bid placed', message: formatCurrency(amount) });
+    } catch (err) {
+      setBidError(
+        err instanceof AxiosError ? (err.response?.data?.error ?? 'Bid failed') : 'Bid failed',
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
@@ -38,7 +169,7 @@ export default function AuctionDetail() {
       <main className="mx-auto max-w-5xl px-6 py-8">
         {loading ? (
           <p className="text-slate-500">Loading…</p>
-        ) : error || !auction ? (
+        ) : error || !auction || !live ? (
           <div className="rounded-xl border border-dashed border-slate-300 py-16 text-center text-slate-500 dark:border-slate-700">
             {error ?? 'Auction not found'}
             <div className="mt-4">
@@ -59,9 +190,7 @@ export default function AuctionDetail() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="grid h-full w-full place-items-center text-slate-400">
-                    No image
-                  </div>
+                  <div className="grid h-full w-full place-items-center text-slate-400">No image</div>
                 )}
               </div>
               {auction.images.length > 1 && (
@@ -74,65 +203,107 @@ export default function AuctionDetail() {
                         i === activeImage ? 'border-brand-600' : 'border-transparent'
                       }`}
                     >
-                      <img
-                        src={resolveImageUrl(img.thumbnailUrl) ?? ''}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
+                      <img src={resolveImageUrl(img.thumbnailUrl) ?? ''} alt="" className="h-full w-full object-cover" />
                     </button>
                   ))}
                 </div>
               )}
-            </div>
-
-            {/* Details */}
-            <div>
-              <div className="flex items-center gap-3">
-                <StateBadge state={auction.state} />
-                <span className="text-xs font-medium uppercase tracking-wide text-brand-600">
-                  {auction.categoryName}
-                </span>
-              </div>
-              <h1 className="mt-3 text-3xl font-bold">{auction.title}</h1>
-              <p className="mt-2 text-sm text-slate-500">
-                Sold by @{auction.seller.username} · reputation{' '}
-                {auction.seller.reputationScore.toFixed(2)}
-              </p>
-
-              <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
-                <p className="text-xs text-slate-500">
-                  {auction.currentBid > 0 ? 'Current bid' : 'Starting price'}
-                </p>
-                <p className="text-3xl font-bold">
-                  {formatCurrency(auction.currentBid > 0 ? auction.currentBid : auction.startingPrice)}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  {auction.bidCount} {auction.bidCount === 1 ? 'bid' : 'bids'} · min increment{' '}
-                  {formatCurrency(auction.minBidIncrement)}
-                </p>
-                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <p className="text-slate-500">Starts</p>
-                    <p className="font-medium">{new Date(auction.startTime).toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-slate-500">Ends</p>
-                    <p className="font-medium">{new Date(auction.endTime).toLocaleString()}</p>
-                  </div>
-                </div>
-                {/* Live bidding controls arrive in Phase 4. */}
-                <p className="mt-4 text-xs italic text-slate-400">
-                  Live bidding opens in the next phase.
-                </p>
-              </div>
-
               <div className="mt-6">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                  Description
-                </h2>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Description</h2>
                 <p className="mt-2 whitespace-pre-line text-slate-700 dark:text-slate-300">
                   {auction.description}
                 </p>
+              </div>
+            </div>
+
+            {/* Live panel */}
+            <div>
+              <div className="flex flex-wrap items-center gap-3">
+                <StateBadge state={live.state} />
+                <span className="text-xs font-medium uppercase tracking-wide text-brand-600">
+                  {auction.categoryName}
+                </span>
+                {room.connected && (
+                  <span className="ml-auto flex items-center gap-1 text-xs text-slate-500">
+                    <span className="text-brand-500">●</span> {room.watcherCount} watching
+                  </span>
+                )}
+              </div>
+              <h1 className="mt-3 text-3xl font-bold">{auction.title}</h1>
+              <p className="mt-2 text-sm text-slate-500">
+                Sold by @{auction.seller.username} · reputation {auction.seller.reputationScore.toFixed(2)}
+              </p>
+
+              <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-xs text-slate-500">{live.currentBid > 0 ? 'Current bid' : 'Starting price'}</p>
+                    <p className="text-3xl font-bold">
+                      {formatCurrency(live.currentBid > 0 ? live.currentBid : auction.startingPrice)}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {live.bidCount} {live.bidCount === 1 ? 'bid' : 'bids'} · min increment{' '}
+                      {formatCurrency(auction.minBidIncrement)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500">
+                      {live.state === 'ENDED' || live.state === 'COMPLETED' ? 'Ended' : 'Time left'}
+                    </p>
+                    <CountdownTimer endTime={endTime} offsetMs={room.serverOffsetMs} />
+                  </div>
+                </div>
+
+                {/* Bid form */}
+                {canBid ? (
+                  <form onSubmit={submitBid} className="mt-5 border-t border-slate-100 pt-5 dark:border-slate-800">
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min={minNextBid}
+                        value={bidAmount}
+                        onChange={(e) => setBidAmount(e.target.value)}
+                        placeholder={`${minNextBid.toFixed(2)} or more`}
+                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 dark:border-slate-700 dark:bg-slate-900"
+                      />
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="shrink-0 rounded-lg bg-brand-600 px-5 py-2 font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+                      >
+                        {submitting ? 'Bidding…' : 'Place bid'}
+                      </button>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => setBidAmount(minNextBid.toFixed(2))}
+                        className="text-xs text-brand-600 hover:underline"
+                      >
+                        Bid minimum {formatCurrency(minNextBid)}
+                      </button>
+                      {bidError && <span className="text-xs text-red-500">{bidError}</span>}
+                    </div>
+                  </form>
+                ) : (
+                  <p className="mt-5 border-t border-slate-100 pt-5 text-sm text-slate-500 dark:border-slate-800">
+                    {!isAuthenticated
+                      ? 'Log in to place a bid.'
+                      : user?.id === auction.sellerId
+                        ? 'You cannot bid on your own auction.'
+                        : 'This auction is not accepting bids.'}
+                  </p>
+                )}
+              </div>
+
+              {/* Live bid feed */}
+              <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  Bid activity
+                  {room.connected && <span className="text-xs font-normal text-green-500">● live</span>}
+                </h2>
+                <BidFeed bids={bids} />
               </div>
             </div>
           </div>

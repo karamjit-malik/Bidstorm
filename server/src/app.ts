@@ -9,6 +9,7 @@ import { notFoundHandler, errorHandler } from './middleware/errorMiddleware';
 import authRoutes from './routes/authRoutes';
 import auctionRoutes from './routes/auctionRoutes';
 import categoryRoutes from './routes/categoryRoutes';
+import bidRoutes from './routes/bidRoutes';
 
 export function createApp(): Application {
   const app = express();
@@ -54,7 +55,8 @@ export function createApp(): Application {
   app.use('/api/auth', authRoutes);
   app.use('/api/auctions', auctionRoutes);
   app.use('/api/categories', categoryRoutes);
-  // (bids, recommendations, ... mounted here in later phases)
+  app.use('/api/bids', bidRoutes);
+  // (recommendations, watchlist, ... mounted here in later phases)
 
   app.use(notFoundHandler);
   app.use(errorHandler);

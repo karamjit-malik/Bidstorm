@@ -18,6 +18,12 @@ export default defineConfig({
         target: process.env.VITE_API_PROXY ?? 'http://localhost:5000',
         changeOrigin: true,
       },
+      // Socket.io (WebSocket) for real-time bidding.
+      '/socket.io': {
+        target: process.env.VITE_API_PROXY ?? 'http://localhost:5000',
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
 });
