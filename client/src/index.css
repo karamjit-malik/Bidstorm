@@ -7,6 +7,27 @@
 
 :root {
   color-scheme: light dark;
+
+  /* Helvetica Now — consumed only by the /mainframe route (applied on that
+     page's wrapper, never on the global body, so the rest of BidStorm keeps
+     Inter). */
+  --font-heading: 'HelveticaNowDisplay-Medium', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'HelveticaNowDisplayW01-Rg', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Blinking typewriter cursor for the Mainframe hero. */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.cursor-blink {
+  animation: blink 1s step-end infinite;
 }
 
 @layer base {

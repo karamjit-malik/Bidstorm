@@ -9,6 +9,7 @@ import AuctionDetail from './pages/AuctionDetail';
 import CreateAuction from './pages/CreateAuction';
 import SellerDashboard from './pages/SellerDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import Mainframe from './pages/Mainframe';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import ToastContainer from './components/ui/ToastContainer';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -30,6 +31,9 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify/:token" element={<VerifyEmail />} />
+
+        {/* Standalone creative-agency hero (self-contained, keeps its own fonts) */}
+        <Route path="/mainframe" element={<Mainframe />} />
 
         {/* Public auction browsing */}
         <Route path="/auctions" element={<AuctionList />} />
