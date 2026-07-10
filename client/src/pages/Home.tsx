@@ -46,14 +46,23 @@ export default function Home() {
           Bid live with sub-second updates and discover items picked just for you.
         </p>
 
-        <div className="mt-8">
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          <Link
+            to="/auctions"
+            className="inline-block rounded-lg bg-brand-600 px-5 py-3 font-medium text-white hover:bg-brand-700"
+          >
+            Browse auctions
+          </Link>
           {isAuthenticated && user ? (
             <p className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900">
               Signed in as <span className="font-semibold">{user.fullName}</span> ·{' '}
               <span className="capitalize text-brand-600">{user.role}</span>
             </p>
           ) : (
-            <Link to="/register" className="inline-block rounded-lg bg-brand-600 px-5 py-3 font-medium text-white hover:bg-brand-700">
+            <Link
+              to="/register"
+              className="inline-block rounded-lg border border-slate-300 px-5 py-3 font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+            >
               Get started
             </Link>
           )}

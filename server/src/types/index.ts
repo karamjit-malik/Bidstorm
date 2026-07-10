@@ -16,3 +16,13 @@ export interface ApiResponse<T = unknown> {
   error?: string;
   message?: string;
 }
+
+/** Auction lifecycle states (see the state machine in CLAUDE.md). */
+export type AuctionState =
+  | 'DRAFT'
+  | 'SCHEDULED'
+  | 'LIVE'
+  | 'EXTENDING'
+  | 'ENDED'
+  | 'SETTLING'
+  | 'COMPLETED';

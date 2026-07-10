@@ -28,6 +28,16 @@ export const config = {
     smtpUser: process.env.SMTP_USER ?? '',
     smtpPass: process.env.SMTP_PASS ?? '',
   },
+
+  upload: {
+    // Directory on disk where auction images are written.
+    dir: process.env.UPLOAD_DIR ?? './uploads',
+    maxFileSize: Number(process.env.MAX_FILE_SIZE ?? 5 * 1024 * 1024),
+    maxFilesPerAuction: Number(process.env.MAX_FILES_PER_AUCTION ?? 5),
+    // Public origin used to build absolute-ish image URLs (paths are stored
+    // relative under /uploads; the client prepends the API origin if needed).
+    publicPath: '/uploads',
+  },
 } as const;
 
 /** Refresh-token lifetime in milliseconds (parsed from e.g. "7d"). */

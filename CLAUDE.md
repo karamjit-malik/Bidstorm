@@ -874,7 +874,7 @@ VITE_SOCKET_URL=http://localhost:5000
 
 ## Current Phase
 
-Phase 1 — Project scaffolding and database schema
+Phase 4 — Real-Time Bidding Engine (Phases 1–3 complete)
 
 ---
 

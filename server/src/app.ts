@@ -1,15 +1,20 @@
+import path from 'path';
 import express, { type Application, type Request, type Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
+import { config } from './config';
 import { notFoundHandler, errorHandler } from './middleware/errorMiddleware';
 import authRoutes from './routes/authRoutes';
+import auctionRoutes from './routes/auctionRoutes';
+import categoryRoutes from './routes/categoryRoutes';
 
 export function createApp(): Application {
   const app = express();
 
-  app.use(helmet());
+  // Allow the SPA (a different origin in dev) to load <img> from /uploads.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(
     cors({
       origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
@@ -35,9 +40,21 @@ export function createApp(): Application {
     res.json({ success: true, data: { status: 'ok', service: 'bidstorm-server' } });
   });
 
+  // Serve uploaded auction images. Files live under UPLOAD_DIR on disk and are
+  // exposed read-only at /uploads/... (paths stored in the DB).
+  app.use(
+    config.upload.publicPath,
+    express.static(path.resolve(config.upload.dir), {
+      fallthrough: false,
+      maxAge: '7d',
+    }),
+  );
+
   // Feature routers
   app.use('/api/auth', authRoutes);
-  // (auctions, bids, ... mounted here in later phases)
+  app.use('/api/auctions', auctionRoutes);
+  app.use('/api/categories', categoryRoutes);
+  // (bids, recommendations, ... mounted here in later phases)
 
   app.use(notFoundHandler);
   app.use(errorHandler);
