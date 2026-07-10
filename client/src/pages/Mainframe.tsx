@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const VIDEO_SRC =
   'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260530_042513_df96a13b-6155-4f6e-8b93-c9dee66fba08.mp4';
@@ -136,7 +137,11 @@ export default function Mainframe() {
 
       {/* Navbar */}
       <header className="fixed inset-x-0 top-0 z-10 flex items-center justify-between px-5 py-4 sm:px-8 sm:py-5">
-        <div className="flex items-center gap-3">
+        <Link
+          to="/"
+          aria-label="Back to BidStorm home"
+          className="flex items-center gap-3 transition-opacity hover:opacity-60"
+        >
           <span
             className="text-[21px] tracking-tight text-black sm:text-[26px]"
             style={{ fontFamily: 'var(--font-heading)' }}
@@ -149,7 +154,7 @@ export default function Mainframe() {
           >
             ✳︎
           </span>
-        </div>
+        </Link>
 
         <nav className="hidden text-[23px] text-black md:flex">
           {NAV_LINKS.map((link, i) => (
