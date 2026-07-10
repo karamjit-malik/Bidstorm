@@ -18,11 +18,16 @@ import adminRoutes from './routes/adminRoutes';
 export function createApp(): Application {
   const app = express();
 
-  // Allow the SPA (a different origin in dev) to load <img> from /uploads.
+  // Behind a hosting reverse proxy (Render/Railway/etc.): trust the first proxy
+  // so secure cookies are set, express-rate-limit keys on the real client IP,
+  // and req.ip (used for bid IPs / fraud signals) reflects X-Forwarded-For.
+  app.set('trust proxy', 1);
+
+  // Allow the SPA (a different origin in dev/prod) to load <img> from /uploads.
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(
     cors({
-      origin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
+      origin: config.clientOrigins,
       credentials: true,
     }),
   );

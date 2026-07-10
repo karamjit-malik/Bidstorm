@@ -8,11 +8,21 @@ function required(name: string): string {
   return value;
 }
 
+const clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:5173';
+
 export const config = {
   env: process.env.NODE_ENV ?? 'development',
   port: Number(process.env.PORT ?? 5000),
-  clientOrigin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
+  // Single origin (kept for compatibility) and the parsed list — CLIENT_ORIGIN
+  // may be a comma-separated set so Vercel preview + prod URLs are both allowed.
+  clientOrigin,
+  clientOrigins: clientOrigin.split(',').map((s) => s.trim()).filter(Boolean),
   isProd: process.env.NODE_ENV === 'production',
+
+  db: {
+    // Managed MySQL (Railway/Aiven/etc.) requires TLS. Set DB_SSL=true in prod.
+    ssl: process.env.DB_SSL === 'true',
+  },
 
   jwt: {
     accessSecret: required('JWT_ACCESS_SECRET'),
@@ -30,13 +40,27 @@ export const config = {
   },
 
   upload: {
-    // Directory on disk where auction images are written.
+    // Directory on disk where auction images are written (dev / local fallback).
     dir: process.env.UPLOAD_DIR ?? './uploads',
     maxFileSize: Number(process.env.MAX_FILE_SIZE ?? 5 * 1024 * 1024),
     maxFilesPerAuction: Number(process.env.MAX_FILES_PER_AUCTION ?? 5),
     // Public origin used to build absolute-ish image URLs (paths are stored
     // relative under /uploads; the client prepends the API origin if needed).
     publicPath: '/uploads',
+  },
+
+  // When all three Cloudinary vars are present, images are stored there (a
+  // persistent CDN) instead of the ephemeral local disk. Falls back to local
+  // Sharp/disk for local development when they're absent.
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME ?? '',
+    apiKey: process.env.CLOUDINARY_API_KEY ?? '',
+    apiSecret: process.env.CLOUDINARY_API_SECRET ?? '',
+    enabled: Boolean(
+      process.env.CLOUDINARY_CLOUD_NAME &&
+        process.env.CLOUDINARY_API_KEY &&
+        process.env.CLOUDINARY_API_SECRET,
+    ),
   },
 } as const;
 

@@ -9,7 +9,10 @@ const REFRESH_COOKIE = 'refreshToken';
 const refreshCookieOptions: CookieOptions = {
   httpOnly: true,
   secure: config.isProd,
-  sameSite: 'lax',
+  // In prod the SPA and API live on different domains, so the refresh cookie is
+  // cross-site: it must be SameSite=None (+Secure) to be sent on /refresh. Dev
+  // stays Lax (same-origin via the Vite proxy).
+  sameSite: config.isProd ? 'none' : 'lax',
   path: '/api/auth',
   maxAge: REFRESH_TOKEN_TTL_MS,
 };

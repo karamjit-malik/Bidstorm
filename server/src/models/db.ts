@@ -16,6 +16,9 @@ export const pool = mysql.createPool({
   decimalNumbers: true,
   timezone: 'Z',
   charset: 'utf8mb4_unicode_ci',
+  // Managed MySQL providers require TLS. rejectUnauthorized:false accepts their
+  // provided certs without bundling a CA — fine for this project's scale.
+  ...(process.env.DB_SSL === 'true' ? { ssl: { rejectUnauthorized: false } } : {}),
 });
 
 /**

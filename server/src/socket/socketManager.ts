@@ -39,7 +39,7 @@ export function watcherCount(auctionId: number): number {
 
 export function initSocket(httpServer: HttpServer): Server {
   io = new Server(httpServer, {
-    cors: { origin: config.clientOrigin, credentials: true },
+    cors: { origin: config.clientOrigins, credentials: true },
   });
 
   // --- Authenticate every connection via the JWT access token. ---
