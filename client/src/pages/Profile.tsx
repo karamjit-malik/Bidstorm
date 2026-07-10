@@ -24,7 +24,9 @@ export default function Profile() {
           {rows.map(([k, v]) => (
             <div key={k} className="flex justify-between px-5 py-3.5 text-sm">
               <dt className="text-black/50">{k}</dt>
-              <dd className="font-medium capitalize text-black">{v}</dd>
+              {/* Only the role enum benefits from capitalization — email/username
+                  must render verbatim. */}
+              <dd className={`font-medium text-black ${k === 'Role' ? 'capitalize' : ''}`}>{v}</dd>
             </div>
           ))}
         </dl>
