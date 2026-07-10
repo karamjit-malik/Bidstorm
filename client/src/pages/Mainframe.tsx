@@ -157,7 +157,7 @@ export default function Mainframe() {
               <a href="#" className="transition-opacity hover:opacity-60">
                 {link}
               </a>
-              {i < NAV_LINKS.length - 1 ? ', ' : ''}
+              {i < NAV_LINKS.length - 1 ? ', ' : ''}
             </span>
           ))}
         </nav>
