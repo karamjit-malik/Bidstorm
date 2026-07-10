@@ -113,10 +113,10 @@ export default function CreateAuction() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+    <div className="min-h-screen bg-[#efedea] text-black">
       <Navbar />
-      <main className="mx-auto max-w-2xl px-6 py-8">
-        <h1 className="text-2xl font-bold">Create an auction</h1>
+      <main className="mx-auto max-w-2xl px-5 py-10 sm:px-8">
+        <h1 className="font-display text-3xl tracking-tight sm:text-4xl">Create an auction</h1>
         {serverError && <div className="mt-4"><Banner tone="error">{serverError}</Banner></div>}
 
         {auctionId === null ? (
@@ -213,7 +213,7 @@ export default function CreateAuction() {
               </button>
               <button
                 onClick={() => navigate('/dashboard')}
-                className="rounded-lg border border-slate-300 px-4 py-2 font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+                className="shrink-0 rounded-full border border-black/25 px-5 py-2.5 font-medium text-black transition-colors hover:border-black hover:bg-black hover:text-white"
               >
                 Save as draft
               </button>
