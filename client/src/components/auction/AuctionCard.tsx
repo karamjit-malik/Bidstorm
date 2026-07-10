@@ -39,7 +39,7 @@ export default function AuctionCard({ auction }: { auction: AuctionSummary }) {
         </h3>
         <div className="mt-auto pt-4">
           <p className="text-[11px] uppercase tracking-wide text-black/45">{priceLabel}</p>
-          <p className="font-display text-[22px] tabular-nums text-black">{formatCurrency(price)}</p>
+          <p className="text-[22px] font-medium tabular-nums text-black">{formatCurrency(price)}</p>
           <p className="mt-1 text-[12px] text-black/50">
             {auction.bidCount} {auction.bidCount === 1 ? 'bid' : 'bids'} · @{auction.seller.username}
           </p>
