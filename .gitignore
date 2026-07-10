@@ -30,3 +30,6 @@ Thumbs.db
 
 # Test / coverage
 coverage/
+
+# Local Claude Code settings (personal, not shared)
+.claude/settings.local.json
