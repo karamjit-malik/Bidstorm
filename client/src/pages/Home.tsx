@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import RecommendedCarousel from '../components/recommendation/RecommendedCarousel';
+import TrendingSection from '../components/recommendation/TrendingSection';
 
 export default function Home() {
   const { user, isAuthenticated, status, logout } = useAuth();
@@ -40,7 +42,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-20">
+      <main className="mx-auto max-w-6xl px-6 py-16">
         <h1 className="text-4xl font-bold tracking-tight">Real-time auctions, intelligently matched.</h1>
         <p className="mt-4 max-w-2xl text-lg text-slate-600 dark:text-slate-400">
           Bid live with sub-second updates and discover items picked just for you.
@@ -67,6 +69,9 @@ export default function Home() {
             </Link>
           )}
         </div>
+
+        <RecommendedCarousel />
+        <TrendingSection />
       </main>
     </div>
   );

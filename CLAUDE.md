@@ -874,7 +874,7 @@ VITE_SOCKET_URL=http://localhost:5000
 
 ## Current Phase
 
-Phase 6 — Recommendation Engine (Phases 1–5 complete)
+Phase 7 — Fraud Detection + Analytics + Polish (Phases 1–6 complete)
 
 ---
 

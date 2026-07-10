@@ -5,6 +5,7 @@ import Navbar from '../components/layout/Navbar';
 import StateBadge from '../components/auction/StateBadge';
 import CountdownTimer from '../components/auction/CountdownTimer';
 import BidFeed from '../components/auction/BidFeed';
+import SimilarAuctions from '../components/recommendation/SimilarAuctions';
 import { useAuth } from '../hooks/useAuth';
 import { useAuctionRoom } from '../hooks/useAuctionRoom';
 import { useNotificationStore } from '../store/notificationStore';
@@ -341,6 +342,8 @@ export default function AuctionDetail() {
             </div>
           </div>
         )}
+
+        {auction && <SimilarAuctions auctionId={auction.id} />}
       </main>
     </div>
   );

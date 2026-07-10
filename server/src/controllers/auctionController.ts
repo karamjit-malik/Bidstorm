@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import { catchAsync } from '../utils/catchAsync';
 import { AppError } from '../utils/AppError';
 import * as auctionService from '../services/auctionService';
+import * as interactionModel from '../models/interactionModel';
 import type { AuctionState } from '../types';
 
 function optInt(value: unknown): number | undefined {
@@ -47,6 +48,15 @@ export const getAuction = catchAsync(async (req: Request, res: Response) => {
   const id = optInt(req.params.id);
   if (id === undefined) throw new AppError('Invalid auction id', 400);
   const auction = await auctionService.getAuctionDetail(id);
+
+  // Record a "view" interaction for signed-in, non-owner viewers (recommendation
+  // signal, weight 1.0). Fire-and-forget so it never delays the response.
+  if (req.user && req.user.id !== auction.sellerId) {
+    void interactionModel
+      .recordInteraction(req.user.id, id, 'view')
+      .catch(() => undefined);
+  }
+
   res.json({ success: true, data: { auction } });
 });
 

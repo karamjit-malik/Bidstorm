@@ -2,6 +2,8 @@ import cron from 'node-cron';
 import { runStartDue } from './auctionStartJob';
 import { runEndDue } from './auctionEndJob';
 import { runSettlementCheck } from './settlementCheckJob';
+import { runSimilarityCompute } from './similarityComputeJob';
+import { runTrendingCompute } from './trendingComputeJob';
 
 let started = false;
 
@@ -38,6 +40,8 @@ export function initJobs(): void {
     await runEndDue();
   });
   const settlementSweep = guarded('settlement-check', runSettlementCheck);
+  const trendingCompute = guarded('trending-compute', runTrendingCompute);
+  const similarityCompute = guarded('similarity-compute', runSimilarityCompute);
 
   // Start/end transitions: every 5 seconds (near-real-time, bid endpoint
   // already rejects post-end bids so a few seconds' latency is harmless).
@@ -46,9 +50,20 @@ export function initJobs(): void {
   // Settlement timeout: every 15 minutes.
   cron.schedule('*/15 * * * *', settlementSweep);
 
-  // Run once immediately so anything due during downtime is handled at boot.
+  // Trending: recompute every 15 minutes.
+  cron.schedule('*/15 * * * *', trendingCompute);
+
+  // Similarity matrix: nightly at 03:00.
+  cron.schedule('0 3 * * *', similarityCompute);
+
+  // Run once immediately so anything due during downtime is handled and the
+  // recommendation caches are warm at boot.
   void lifecycleSweep();
   void settlementSweep();
+  void trendingCompute();
+  void similarityCompute();
 
-  console.log('[jobs] lifecycle scheduler started (5s sweep, 15m settlement check)');
+  console.log(
+    '[jobs] scheduler started (5s lifecycle, 15m settlement+trending, nightly similarity)',
+  );
 }

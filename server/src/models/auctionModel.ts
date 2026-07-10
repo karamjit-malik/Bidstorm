@@ -91,6 +91,54 @@ export async function findById(id: number): Promise<AuctionRow | null> {
   return rows[0] ?? null;
 }
 
+/** Loads many auctions by id (unordered — callers reorder as needed). */
+export async function findByIds(ids: number[]): Promise<AuctionRow[]> {
+  if (ids.length === 0) return [];
+  const [rows] = await pool.query<AuctionRow[]>(`${BASE_SELECT} WHERE a.id IN (?)`, [ids]);
+  return rows;
+}
+
+/**
+ * Cold-start candidates: LIVE auctions in the given categories, soonest-ending
+ * first (then most bids). Excludes the user's own auctions and any provided
+ * exclusions (already-interacted). Pass empty categoryIds to ignore the filter.
+ */
+export async function findColdStartCandidates(opts: {
+  categoryIds: number[];
+  excludeAuctionIds: number[];
+  excludeSellerId: number;
+  limit: number;
+}): Promise<AuctionRow[]> {
+  const where: string[] = ["a.state IN ('LIVE','EXTENDING')", 'a.seller_id <> ?'];
+  const params: unknown[] = [opts.excludeSellerId];
+
+  if (opts.categoryIds.length > 0) {
+    where.push('a.category_id IN (?)');
+    params.push(opts.categoryIds);
+  }
+  if (opts.excludeAuctionIds.length > 0) {
+    where.push('a.id NOT IN (?)');
+    params.push(opts.excludeAuctionIds);
+  }
+  params.push(opts.limit);
+
+  const [rows] = await pool.query<AuctionRow[]>(
+    `${BASE_SELECT} WHERE ${where.join(' AND ')} ORDER BY a.end_time ASC, a.bid_count DESC LIMIT ?`,
+    params,
+  );
+  return rows;
+}
+
+/** Active auctions with bid activity, for trending computation. */
+export async function findActiveWithBids(limit: number): Promise<AuctionRow[]> {
+  const [rows] = await pool.query<AuctionRow[]>(
+    `${BASE_SELECT} WHERE a.state IN ('LIVE','EXTENDING') AND a.bid_count > 0
+     ORDER BY a.bid_count DESC LIMIT ?`,
+    [limit],
+  );
+  return rows;
+}
+
 export interface CreateAuctionInput {
   sellerId: number;
   categoryId: number;

@@ -10,6 +10,8 @@ import authRoutes from './routes/authRoutes';
 import auctionRoutes from './routes/auctionRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import bidRoutes from './routes/bidRoutes';
+import recommendationRoutes from './routes/recommendationRoutes';
+import watchlistRoutes from './routes/watchlistRoutes';
 
 export function createApp(): Application {
   const app = express();
@@ -56,7 +58,9 @@ export function createApp(): Application {
   app.use('/api/auctions', auctionRoutes);
   app.use('/api/categories', categoryRoutes);
   app.use('/api/bids', bidRoutes);
-  // (recommendations, watchlist, ... mounted here in later phases)
+  app.use('/api/recommendations', recommendationRoutes);
+  app.use('/api/watchlist', watchlistRoutes);
+  // (reviews, admin, ... mounted here in later phases)
 
   app.use(notFoundHandler);
   app.use(errorHandler);

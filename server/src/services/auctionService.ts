@@ -170,6 +170,12 @@ async function thumbnailMap(auctionIds: number[]): Promise<Map<number, string>> 
   return map;
 }
 
+/** Maps auction rows to public summaries with thumbnails (preserving order). */
+export async function toSummaries(rows: AuctionRow[]): Promise<PublicAuctionSummary[]> {
+  const thumbs = await thumbnailMap(rows.map((r) => r.id));
+  return rows.map((r) => auctionModel.toSummary(r, thumbs.get(r.id) ?? null));
+}
+
 /** Loads an auction and asserts the actor owns it. Used before mutations. */
 async function loadOwned(auctionId: number, user: AuthUser): Promise<AuctionRow> {
   const row = await auctionModel.findById(auctionId);

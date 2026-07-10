@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { body } from 'express-validator';
 import { validate } from '../middleware/validationMiddleware';
 import { requireAuth } from '../middleware/authMiddleware';
+import { optionalAuth } from '../middleware/optionalAuthMiddleware';
 import { requireRole } from '../middleware/roleMiddleware';
 import { uploadAuctionImages } from '../middleware/uploadMiddleware';
 import * as auctionController from '../controllers/auctionController';
@@ -43,7 +44,8 @@ router.get('/', auctionController.listAuctions);
 // Seller dashboard — must be declared before '/:id' so it isn't shadowed.
 router.get('/mine', requireAuth, requireRole('seller', 'admin'), auctionController.listMyAuctions);
 
-router.get('/:id', auctionController.getAuction);
+// optionalAuth: personalizes (records a view) when signed in, still public.
+router.get('/:id', optionalAuth, auctionController.getAuction);
 
 // --- Seller-owned mutations ---
 router.post(

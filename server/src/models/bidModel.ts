@@ -112,6 +112,19 @@ export async function markRetracted(bidId: number, conn: PoolConnection): Promis
   await conn.query('UPDATE bids SET is_retracted = TRUE, is_winning = FALSE WHERE id = ?', [bidId]);
 }
 
+/** Most recent (non-retracted) bid time per auction, for trending decay. */
+export async function lastBidTimes(auctionIds: number[]): Promise<Map<number, Date>> {
+  const map = new Map<number, Date>();
+  if (auctionIds.length === 0) return map;
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT auction_id, MAX(created_at) AS last_bid FROM bids
+     WHERE auction_id IN (?) AND is_retracted = FALSE GROUP BY auction_id`,
+    [auctionIds],
+  );
+  for (const r of rows) map.set(Number(r.auction_id), new Date(r.last_bid as string));
+  return map;
+}
+
 /** Highest non-retracted bid for an auction, used to recompute state after a retract. */
 export async function findHighestActiveBid(
   auctionId: number,
